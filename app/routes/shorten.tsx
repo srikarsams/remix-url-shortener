@@ -2,7 +2,7 @@ import type { url } from '@prisma/client';
 import type { ActionFunction, LoaderFunction } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { useActionData, useLoaderData } from '@remix-run/react';
-import { useState } from 'react';
+import React, { Fragment, useState } from 'react';
 import Button from '~/components/button';
 import InputField from '~/components/input-field';
 import LinkCard from '~/components/link-card';
@@ -153,39 +153,37 @@ export default function Shorten() {
         </div>
       </form>
       <div className="mt-10 flex-1">
-        <h2 className="font-semibold text-center text-xl">
+        <h2 className="font-semibold text-center text-xl mb-4">
           Previously shortened URLs
         </h2>
         {loaderData.urls.length ? (
-          <table className="w-full mt-6">
-            <tbody>
-              {loaderData.urls.map((url) => {
-                return (
-                  <tr key={url.id}>
-                    <td className="px-4 py-1 border-2 w-full">
-                      <div className="flex justify-between">
-                        <a
-                          href={`/${url.slug}`}
-                          className="font-semibold font-mono text-gray-600 hover:underline"
-                        >
-                          {url.url}
-                        </a>
-                        <button
-                          className="pl-2 hover:underline text-xs"
-                          onClick={() =>
-                            setCuid(cuid === url.slug ? '' : url.slug)
-                          }
-                        >
-                          Details
-                        </button>
-                      </div>
-                      <LinkCard url={url} isOpen={url.slug === cuid} />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          loaderData.urls.map((url, index) => {
+            return (
+              <Fragment key={url.id}>
+                <div
+                  className={`border-2 border-b-0 ${
+                    loaderData.urls.length === index + 1 ? 'border-b-2' : ''
+                  } px-2`}
+                >
+                  <div className={`flex justify-between`}>
+                    <a
+                      href={`/${url.slug}`}
+                      className="font-semibold font-mono text-gray-600 hover:underline w-11/12 py-0.5 border-r-2 text-ellipsis overflow-hidden whitespace-nowrap"
+                    >
+                      {url.url}
+                    </a>
+                    <button
+                      className="pl-2 hover:underline text-xs"
+                      onClick={() => setCuid(cuid === url.slug ? '' : url.slug)}
+                    >
+                      Details
+                    </button>
+                  </div>
+                </div>
+                <LinkCard url={url} isOpen={url.slug === cuid} />
+              </Fragment>
+            );
+          })
         ) : (
           <p className="text-center text-gray-500 mt-12">
             No URLs shortened yet :(
