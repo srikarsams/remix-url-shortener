@@ -62,6 +62,24 @@ export const action: ActionFunction = async ({ request }) => {
   const userId = await requireUserId(request);
 
   const formData = await request.formData();
+
+  // performs delete action if the _method is delete and returns early
+  if (formData.get('_method') === 'delete') {
+    const urlId = await formData.get('urlId');
+    if (typeof urlId !== 'string') {
+      return badRequest({
+        formError: 'Invalid request',
+      });
+    }
+
+    await db.url.delete({
+      where: {
+        id: urlId,
+      },
+    });
+    return null;
+  }
+
   const url = formData.get('url');
   const name = formData.get('name');
 
@@ -80,7 +98,7 @@ export const action: ActionFunction = async ({ request }) => {
     return badRequest({ fieldErrors, fields });
   }
 
-  const urlObj = await db.url.findFirst({
+  let urlObj = await db.url.findFirst({
     where: {
       userId,
       url,
@@ -88,10 +106,19 @@ export const action: ActionFunction = async ({ request }) => {
   });
 
   if (urlObj) {
-    return badRequest({
-      fieldErrors: {
-        url: 'URL already shortened. Please try a new one!',
+    // update the data if url already exists
+    urlObj = await db.url.update({
+      where: {
+        id: urlObj.id,
       },
+      data: {
+        name,
+        url,
+      },
+    });
+    return json({
+      url: urlObj.url,
+      slug: urlObj.slug,
     });
   }
 
@@ -114,6 +141,8 @@ export default function Shorten() {
   const loaderData = useLoaderData<LoaderData>();
 
   const [cuid, setCuid] = useState('');
+  const [editUrlObj, setEditUrlObj] = useState<url | null>(null);
+
   return (
     <div className="my-3 mx-2 mt-16 flex flex-col max-w-sm lg:mx-auto">
       <form
@@ -138,14 +167,14 @@ export default function Shorten() {
           name="name"
           placeholder="Please enter the url name"
           type="text"
-          value={actionData?.fields?.name}
+          value={actionData?.fields?.name || editUrlObj?.name}
           error={actionData?.fieldErrors?.name}
         />
         <InputField
           name="url"
           placeholder="Please enter the url to be shortened"
           type="text"
-          value={actionData?.fields?.url}
+          value={actionData?.fields?.url || editUrlObj?.url}
           error={actionData?.fieldErrors?.url}
         />
         <div className="text-center">
@@ -170,7 +199,7 @@ export default function Shorten() {
                       href={`/${url.slug}`}
                       className="font-semibold font-mono text-gray-600 hover:underline w-11/12 py-0.5 border-r-2 text-ellipsis overflow-hidden whitespace-nowrap"
                     >
-                      {url.url}
+                      {url.name}
                     </a>
                     <button
                       className="pl-2 hover:underline text-xs"
@@ -180,7 +209,11 @@ export default function Shorten() {
                     </button>
                   </div>
                 </div>
-                <LinkCard url={url} isOpen={url.slug === cuid} />
+                <LinkCard
+                  url={url}
+                  isOpen={url.slug === cuid}
+                  onEditClick={(url) => setEditUrlObj(url)}
+                />
               </Fragment>
             );
           })
