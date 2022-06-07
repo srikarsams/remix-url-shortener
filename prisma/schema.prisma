@@ -17,15 +17,16 @@ model User {
 
   username     String @unique
   passwordHash String
-  urls         URL[]
+  urls         url[]
 }
 
-model URL {
+model url {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
 
   url    String
-  slug   String  @default(cuid())
-  User   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String?
+  slug   String @default(cuid())
+  name   String
+  User   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
 }
