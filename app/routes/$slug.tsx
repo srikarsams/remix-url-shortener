@@ -4,7 +4,7 @@ import { db } from '~/utils/db.server';
 
 export const loader: LoaderFunction = async ({ params }) => {
   const slug = params.slug;
-  console.log({ slug });
+
   const url = await db.url.findFirst({
     where: {
       slug,
